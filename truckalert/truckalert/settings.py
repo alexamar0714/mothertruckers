@@ -25,7 +25,7 @@ SECRET_KEY = 'im97(r3)#m)qg-$@0riv=bz%f*xz=t%^zir&=0*p(pdo9qnlyg'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['.ntnu.no']
 
 
 # Application definition
