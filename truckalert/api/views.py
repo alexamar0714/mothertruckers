@@ -1,5 +1,9 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status
+from django.http import HttpResponse, JsonResponse
+from api.serializers import PositionSerializer
+from api.models import Position
 
 
 
@@ -20,14 +24,14 @@ class UpdatePosition(APIView):
 
         app_key = request.data['app_key']
 
-        if !app_key_valid(app_key): #check validity of the application key
+        if not app_key_valid(app_key): #check validity of the application key
             return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
 
         uid = request.data['data']['user_id']
         pos_object = get_pos_object(uid)
         serializer = PositionSerializer(request.data['data'])
 
-        if !serializer.is_valid():
+        if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         if pos_object: #if the user is already registered
@@ -40,4 +44,6 @@ class UpdatePosition(APIView):
         #return Response
         return Response("SUCCESS")
 
-
+    
+    def get(self, request, format=None):
+        return Response("TEST SUCCESSFUL")
