@@ -35,7 +35,10 @@ class UpdatePosition(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         if pos_object: #if the user is already registered
-            serializer.save(pos_object)
+            serializer2 = PositionSerializer(pos_object, data=request.data['data'])
+            if not serializer2.is_valid():
+                return Response(seiralizer2.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            serializer2.save()
             
         else:
             serializer.save()
