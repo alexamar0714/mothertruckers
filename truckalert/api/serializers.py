@@ -27,13 +27,15 @@ class PositionSerializer(serializers.ModelSerializer):
         return Position.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
+        ctr_threshold = 5 #value of prob_ctr at which an alert is given
         instance.old_long = instance.new_long
         instance.old_lat = instance.new_lat
         instance.new_long = validated_data['new_long']
         instance.new_lat = validated_data['new_lat']
 
         if self.check_pos(instance):
-            instance.prob_ctr += 1
+            if instance.prob_ctr <= ctr_threshold:
+                instance.prob_ctr += 1
         
         else:
             if instance.alert:
@@ -42,7 +44,7 @@ class PositionSerializer(serializers.ModelSerializer):
             if instance.prob_ctr > 0:
                 instance.prob_ctr -= 1
 
-        if instance.prob_ctr > 5:
+        if instance.prob_ctr > ctr_threshold:
             instance.alert = True
 
         instance.save()
