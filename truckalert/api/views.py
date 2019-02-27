@@ -4,7 +4,7 @@ from rest_framework import status
 from django.http import HttpResponse, JsonResponse
 from api.serializers import PositionSerializer
 from api.models import Position
-
+import geopy.distance
 
 
 class UpdatePosition(APIView):
@@ -14,7 +14,6 @@ class UpdatePosition(APIView):
             return Position.objects.get(user_id=uid)
         except:
             return False
-    
     
     def app_key_valid(self, key):
         #implement application key validation
@@ -43,9 +42,16 @@ class UpdatePosition(APIView):
         else:
             serializer.save()
        
-        #create JSON of coordinates of incidents
-        #return Response
-        return Response("SUCCESS")
+        new_long = request.data['data']['new_long']
+        new_lat = request.data['data']['new_lat']
+        search_radius = 200 #scope of search in meters 
+
+        alerts = Position.objects.raw('SELECT * FROM api_position WHERE alert=true')
+        alert_positions = []
+        for pos in alerts:
+            if geopy.distance.distance((pos.new_lat, pos.new_long), (new_lat, new_long)).m <= 200:
+                alert_positions.append({"longitude": pos.new_long, "latitude": pos.new_lat})
+        return Response(alert_positions)
 
     
     def get(self, request, format=None):
