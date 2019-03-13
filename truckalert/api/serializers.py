@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from api.models import Position
+from api.models import Position, Event
 import uuid
 import math
 import geopy.distance
@@ -50,4 +50,8 @@ class PositionSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
         
-        
+
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ('event', 'longitude', 'latitude', 'user_id', 'date_added')

@@ -2,9 +2,10 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import HttpResponse, JsonResponse
-from api.serializers import PositionSerializer
+from api.serializers import PositionSerializer, EventSerializer
 from api.models import Position
 import geopy.distance
+import datetime
 
 
 class UpdatePosition(APIView):
@@ -36,7 +37,7 @@ class UpdatePosition(APIView):
         if pos_object: #if the user is already registered
             serializer2 = PositionSerializer(pos_object, data=request.data['data'])
             if not serializer2.is_valid():
-                return Response(seiralizer2.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+                return Response(serializer2.errors, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
             serializer2.save()
             
         else:
@@ -49,10 +50,43 @@ class UpdatePosition(APIView):
         alerts = Position.objects.raw('SELECT * FROM api_position WHERE alert=true')
         alert_positions = []
         for pos in alerts:
-            if geopy.distance.distance((pos.new_lat, pos.new_long), (new_lat, new_long)).m <= 200:
-                alert_positions.append({"longitude": pos.new_long, "latitude": pos.new_lat})
-        return Response(alert_positions)
+            d = geopy.distance.distance((pos.new_lat, pos.new_long), (new_lat, new_long)).m 
+            if d <= search_radius:
+                alert_positions.append({"distance": d, "longitude": pos.new_long, "latitude": pos.new_lat})
+        
+        events = Position.objects.raw('SELECT * FROM api_event')
+        event_positions = []
+        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=1))) 
+        cooldown = 3600 #number of seconds an event is considered as relevant
+        for e in events:
+            d = geopy.distance.distance((e.latitude, e.longitude), (new_lat, new_long)).m 
+            if d <= search_radius and (now - e.date_added).total_seconds() < cooldown:
+                event_positions.append({"event": e.event, "distance": d, "longitude": e.longitude, "latitude": e.latitude})
+        return Response([alert_positions, event_positions])
 
     
     def get(self, request, format=None):
         return Response("TEST SUCCESSFUL")
+
+
+class NotifyEvent(APIView):
+
+
+    def app_key_valid(self, key):
+        #implement app key validation
+        return True
+
+    def post(self, request, format=None):
+        app_key = request.data['app_key']
+
+        if not self.app_key_valid(app_key): #check validity of the application key
+            return Response(serializer.errors, status=status.HTTP_401_UNAUTHORIZED)
+
+        serializer = EventSerializer(data=request.data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer.save()
+
+        return Response("OK")

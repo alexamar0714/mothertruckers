@@ -18,4 +18,5 @@ from . import views
 
 urlpatterns = [
     path('updatepos/', views.UpdatePosition.as_view()),
+    path('notify/', views.NotifyEvent.as_view()),
 ]
