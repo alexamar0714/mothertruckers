@@ -46,17 +46,18 @@ class UpdatePosition(APIView):
         new_long = request.data['data']['new_long']
         new_lat = request.data['data']['new_lat']
         search_radius = 200 #scope of search in meters 
+        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=1))) 
+        cooldown = 1800 # number of seconds an alert is considered relevant
 
         alerts = Position.objects.raw('SELECT * FROM api_position WHERE alert=true')
         alert_positions = []
         for pos in alerts:
             d = geopy.distance.distance((pos.new_lat, pos.new_long), (new_lat, new_long)).m 
-            if d <= search_radius:
+            if d <= search_radius and (now - pos.last_updated).total_seconds() < cooldown:
                 alert_positions.append({"distance": d, "longitude": pos.new_long, "latitude": pos.new_lat})
         
         events = Position.objects.raw('SELECT * FROM api_event')
         event_positions = []
-        now = datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=1))) 
         cooldown = 3600 #number of seconds an event is considered as relevant
         for e in events:
             d = geopy.distance.distance((e.latitude, e.longitude), (new_lat, new_long)).m 
